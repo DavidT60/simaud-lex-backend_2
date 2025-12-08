@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { ProcesoJudicialService } from './proceso-judicial.service';
 import { CreateProcesoJudicialDto } from './dto/create-proceso-judicial.dto';
 import { UpdateProcesoJudicialDto } from './dto/update-proceso-judicial.dto';
+import { SimulateSentenciaDto } from './dto/simulate-sentencia.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('Procesos Judiciales')
@@ -42,7 +43,11 @@ export class ProcesoJudicialController {
 
   @Post(':id/simular-sentencia')
   @ApiOperation({ summary: 'Generar simulación de sentencia basada en datos del proceso' })
-  simularSentencia(@Param('id') id: string) {
-    return this.procesoService.generarSimulacionSentencia(id);
+  @ApiResponse({ status: 200, description: 'Simulación generada exitosamente' })
+  simularSentencia(
+    @Param('id') id: string,
+    @Body() simulateDto: SimulateSentenciaDto
+  ) {
+    return this.procesoService.generarSimulacionSentencia(id, simulateDto);
   }
 }
