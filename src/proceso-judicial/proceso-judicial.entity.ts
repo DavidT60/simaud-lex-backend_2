@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, OneToMany, BeforeInsert } from 'typeorm';
 import { Nna } from '../nna/nna.entity';
 import { EstadoProceso, TipoDemanda } from './enums/proceso.enums';
 import { ParteProceso } from './parte-proceso.entity';
@@ -10,6 +10,9 @@ import { RegimenVisitas } from './regimen-visitas.entity';
 export class ProcesoJudicial {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
+  id_caso_dinamico: string;
 
   @Column('date')
   fecha_inicio: Date;
@@ -34,4 +37,15 @@ export class ProcesoJudicial {
 
   @OneToMany(() => RegimenVisitas, (regimen) => regimen.proceso)
   regimenesVisita: RegimenVisitas[];
+
+  @BeforeInsert()
+  generateDynamicId() {
+    if (!this.id_caso_dinamico) {
+      const year = new Date().getFullYear();
+      // Use timestamp for uniqueness (last 4 digits of current timestamp)
+      // This ensures uniqueness while maintaining readability
+      const sequential = Date.now().toString().slice(-4);
+      this.id_caso_dinamico = `${year}-${sequential}-1`;
+    }
+  }
 }
