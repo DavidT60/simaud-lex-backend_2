@@ -55,10 +55,11 @@ export class ProcesoJudicialService {
     await this.procesoRepository.remove(proceso);
   }
 
-  async generarSimulacionSentencia(id: string): Promise<any> {
+  async generarSimulacionSentencia(id: string, simulateDto?: any): Promise<any> {
     const proceso = await this.findOne(id);
     
-    let montoBase = 5000; // Monto base arbitrario
+    // Usar monto solicitado por usuario o valor base
+    let montoBase = simulateDto?.montoSolicitado || 5000;
     const necesidades = proceso.nna.necesidades_especiales || [];
     
     // Lógica básica: aumentar monto por cada necesidad especial
@@ -68,27 +69,43 @@ export class ProcesoJudicialService {
 
     // Buscar demandado para evaluar recursos
     const demandado = proceso.partes.find(p => p.rol === RolParte.DEMANDADO);
-    let recursosDemandado = 0;
+    // Usar recursos estimados del formulario o del demandado existente
+    let recursosDemandado = simulateDto?.recursosDemandadoEstimados || 0;
     
-    if (demandado && demandado.persona) {
+    if (!recursosDemandado && demandado && demandado.persona) {
       recursosDemandado = Number(demandado.persona.recursos_economicos);
-      // Si tiene buenos recursos, aumentar un poco la sugerencia
-      if (recursosDemandado > 50000) {
-        montoBase = montoBase * 1.2;
-      }
+    }
+    
+    // Si tiene buenos recursos, aumentar un poco la sugerencia
+    if (recursosDemandado > 50000) {
+      montoBase = montoBase * 1.2;
+    }
+
+    const razonamiento = [
+      `Base inicial: ${simulateDto?.montoSolicitado || 5000}`,
+      `Incremento por necesidades especiales (${necesidades.length}): ${necesidades.length * 2000}`,
+      `Ajuste por recursos del demandado: ${recursosDemandado > 50000 ? '20% extra' : 'Sin ajuste'}`
+    ];
+
+    if (simulateDto?.notasAdicionales) {
+      razonamiento.push(`Notas adicionales: ${simulateDto.notasAdicionales}`);
     }
 
     return {
       procesoId: id,
+      casoNumero: proceso.id_caso_dinamico,
       simulacion: {
-        montoSugerido: montoBase,
+        montoSugerido: Math.round(montoBase),
         moneda: 'DOP',
-        razonamiento: [
-          `Base inicial: 5000`,
-          `Incremento por necesidades especiales (${necesidades.length}): ${necesidades.length * 2000}`,
-          `Ajuste por recursos del demandado: ${recursosDemandado > 50000 ? '20% extra' : 'Sin ajuste'}`
-        ]
-      }
+        razonamiento,
+        datosConsiderados: {
+          necesidadesNNA: necesidades,
+          recursosDemandado,
+          montoSolicitadoUsuario: simulateDto?.montoSolicitado,
+          notasUsuario: simulateDto?.notasAdicionales
+        }
+      },
+      fechaSimulacion: new Date().toISOString()
     };
   }
 }
