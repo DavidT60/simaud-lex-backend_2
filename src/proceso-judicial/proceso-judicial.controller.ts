@@ -48,6 +48,22 @@ export class ProcesoJudicialController {
     @Param('id') id: string,
     @Body() simulateDto: SimulateSentenciaDto
   ) {
+    console.log("Sending simulateDto", simulateDto);
     return this.procesoService.generarSimulacionSentencia(id, simulateDto);
+  }
+
+  @Get(':id/historial-simulaciones')
+  @ApiOperation({ summary: 'Obtener historial de simulaciones de un proceso' })
+  @ApiResponse({ status: 200, description: 'Historial de simulaciones obtenido exitosamente' })
+  getHistorialSimulaciones(@Param('id') id: string) {
+    return this.procesoService.getHistorialSimulaciones(id);
+  }
+
+  @Get('simulacion/:simulacionId')
+  @ApiOperation({ summary: 'Obtener detalles de una simulación específica' })
+  @ApiResponse({ status: 200, description: 'Simulación encontrada' })
+  @ApiResponse({ status: 404, description: 'Simulación no encontrada' })
+  getSimulacion(@Param('simulacionId') simulacionId: string) {
+    return this.procesoService.getSimulacionById(simulacionId);
   }
 }

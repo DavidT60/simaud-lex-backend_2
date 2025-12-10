@@ -5,6 +5,7 @@ import { ParteProceso } from './parte-proceso.entity';
 import { Sentencia } from './sentencia.entity';
 import { ObligacionAlimentaria } from './obligacion-alimentaria.entity';
 import { RegimenVisitas } from './regimen-visitas.entity';
+import { HechosSimulacion } from './hechos-simulacion.entity';
 
 @Entity()
 export class ProcesoJudicial {
@@ -38,6 +39,9 @@ export class ProcesoJudicial {
   @OneToMany(() => RegimenVisitas, (regimen) => regimen.proceso)
   regimenesVisita: RegimenVisitas[];
 
+  @OneToMany(() => HechosSimulacion, (hechos) => hechos.proceso)
+  hechosSimulaciones: HechosSimulacion[];
+
   @BeforeInsert()
   generateDynamicId() {
     if (!this.id_caso_dinamico) {
@@ -49,3 +53,4 @@ export class ProcesoJudicial {
     }
   }
 }
+
