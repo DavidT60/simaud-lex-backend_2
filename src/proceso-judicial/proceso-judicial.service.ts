@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { ProcesoJudicial } from './proceso-judicial.entity';
 import { CreateProcesoJudicialDto } from './dto/create-proceso-judicial.dto';
 import { UpdateProcesoJudicialDto } from './dto/update-proceso-judicial.dto';
+import { SimulateSentenciaDto } from './dto/simulate-sentencia.dto';
+import { HechosSimulacion } from './hechos-simulacion.entity';
 import { Nna } from '../nna/nna.entity';
 import { RolParte } from './enums/proceso.enums';
 
@@ -14,6 +16,8 @@ export class ProcesoJudicialService {
     private readonly procesoRepository: Repository<ProcesoJudicial>,
     @InjectRepository(Nna)
     private readonly nnaRepository: Repository<Nna>,
+    @InjectRepository(HechosSimulacion)
+    private readonly hechosSimulacionRepository: Repository<HechosSimulacion>,
   ) {}
 
   async create(createDto: CreateProcesoJudicialDto): Promise<ProcesoJudicial> {
@@ -55,57 +59,66 @@ export class ProcesoJudicialService {
     await this.procesoRepository.remove(proceso);
   }
 
-  async generarSimulacionSentencia(id: string, simulateDto?: any): Promise<any> {
+  async generarSimulacionSentencia(id: string, simulateDto: SimulateSentenciaDto): Promise<any> {
     const proceso = await this.findOne(id);
     
-    // Usar monto solicitado por usuario o valor base
-    let montoBase = simulateDto?.montoSolicitado || 5000;
-    const necesidades = proceso.nna.necesidades_especiales || [];
-    
-    // Lógica básica: aumentar monto por cada necesidad especial
-    if (necesidades.length > 0) {
-      montoBase += 2000 * necesidades.length;
-    }
-
-    // Buscar demandado para evaluar recursos
-    const demandado = proceso.partes.find(p => p.rol === RolParte.DEMANDADO);
-    // Usar recursos estimados del formulario o del demandado existente
-    let recursosDemandado = simulateDto?.recursosDemandadoEstimados || 0;
-    
-    if (!recursosDemandado && demandado && demandado.persona) {
-      recursosDemandado = Number(demandado.persona.recursos_economicos);
-    }
-    
-    // Si tiene buenos recursos, aumentar un poco la sugerencia
-    if (recursosDemandado > 50000) {
-      montoBase = montoBase * 1.2;
-    }
-
-    const razonamiento = [
-      `Base inicial: ${simulateDto?.montoSolicitado || 5000}`,
-      `Incremento por necesidades especiales (${necesidades.length}): ${necesidades.length * 2000}`,
-      `Ajuste por recursos del demandado: ${recursosDemandado > 50000 ? '20% extra' : 'Sin ajuste'}`
-    ];
-
-    if (simulateDto?.notasAdicionales) {
-      razonamiento.push(`Notas adicionales: ${simulateDto.notasAdicionales}`);
-    }
+    // Guardar los hechos de la simulación en la base de datos
+    const hechosSimulacion = this.hechosSimulacionRepository.create({
+      proceso,
+      ...simulateDto
+    });
+    console.log(hechosSimulacion);
+   
+   
+    let hechosSimulacionSaved = await this.hechosSimulacionRepository.save(hechosSimulacion);
+    console.log(hechosSimulacionSaved);
+    // 1 MOTOR DE RAZONAMIENTO //
+    // 2 ENVIAR DATOS AL LLM DEL MOTOR DE RAZONAMIENTO //
+    // 3 GUARDAR DATOS DEL MOTOR DE RAZONAMIENTO EN LA BASE DE DATOS //
+    // 4 ACTUALIZAR EL ESTADO DE CASO EN LA BASE DE DATOS //
+    // 4.1 ACTUALIZAR EL ESTADO DE CASO EN LA BASE DE DATOS //
+    // 4.2 RETORNAR EL PROCESO JUDICIAL ACTUALIZADO //
 
     return {
-      procesoId: id,
-      casoNumero: proceso.id_caso_dinamico,
+      procesoId: 20,
+      casoNumero: 'RAMDOM-ID-133',
+      hechosSimulacionId: 'RAMDOM-ID-133',
       simulacion: {
-        montoSugerido: Math.round(montoBase),
+        montoSugerido: 10000,
         moneda: 'DOP',
-        razonamiento,
+        razonamiento: [],
         datosConsiderados: {
-          necesidadesNNA: necesidades,
-          recursosDemandado,
-          montoSolicitadoUsuario: simulateDto?.montoSolicitado,
-          notasUsuario: simulateDto?.notasAdicionales
+          necesidadesNNA: [],
+          recursosDemandado: 0,
+          montoSolicitadoUsuario: 5000  ,
+          notasUsuario: 'Ninguna'
         }
       },
       fechaSimulacion: new Date().toISOString()
     };
+  }
+
+  async getHistorialSimulaciones(procesoId: string): Promise<HechosSimulacion[]> {
+    // Verificar que el proceso existe
+    await this.findOne(procesoId);
+    
+    // Obtener todas las simulaciones del proceso ordenadas por fecha (más recientes primero)
+    return this.hechosSimulacionRepository.find({
+      where: { proceso: { id: procesoId } },
+      order: { fecha_simulacion: 'DESC' }
+    });
+  }
+
+  async getSimulacionById(simulacionId: string): Promise<HechosSimulacion> {
+    const simulacion = await this.hechosSimulacionRepository.findOne({
+      where: { id: simulacionId },
+      relations: ['proceso', 'proceso.nna']
+    });
+    
+    if (!simulacion) {
+      throw new NotFoundException(`Simulación with ID ${simulacionId} not found`);
+    }
+    
+    return simulacion;
   }
 }
