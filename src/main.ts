@@ -9,7 +9,7 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173', 'https://simaud-lex.netlify.app'],
     credentials: true,
   });
 
