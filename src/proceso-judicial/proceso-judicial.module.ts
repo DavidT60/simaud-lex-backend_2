@@ -7,6 +7,8 @@ import { ObligacionAlimentaria } from './obligacion-alimentaria.entity';
 import { RegimenVisitas } from './regimen-visitas.entity';
 import { Sentencia } from './sentencia.entity';
 import { ParteProceso } from './parte-proceso.entity';
+import { Reglas } from './reglas.entity';
+import { HechosSimulacion } from './hechos-simulacion.entity';
 import { Nna } from '../nna/nna.entity';
 import { Person } from '../person/person.entity';
 
@@ -18,6 +20,8 @@ import { Person } from '../person/person.entity';
       RegimenVisitas,
       Sentencia,
       ParteProceso,
+      Reglas,
+      HechosSimulacion,
       Nna,
       Person
     ])
@@ -27,3 +31,4 @@ import { Person } from '../person/person.entity';
   exports: [ProcesoJudicialService]
 })
 export class ProcesoJudicialModule {}
+
