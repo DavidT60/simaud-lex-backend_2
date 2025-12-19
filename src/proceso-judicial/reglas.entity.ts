@@ -1,20 +1,20 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { TipoDemanda } from './enums/proceso.enums';
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { TipoDemanda } from "./enums/proceso.enums";
 
 @Entity()
 export class Reglas {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column('text')
+  @Column("text")
   condition: string;
 
-  @Column('text')
+  @Column("text")
   action: string;
 
-  @Column('text')
+  @Column("text")
   legal_basis: string;
 
-  @Column({ type: 'enum', enum: TipoDemanda })
+  @Column({ type: "enum", enum: TipoDemanda })
   domain: TipoDemanda;
 }
