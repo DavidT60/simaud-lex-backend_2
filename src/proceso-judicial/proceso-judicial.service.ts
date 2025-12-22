@@ -98,9 +98,13 @@ export class ProcesoJudicialService {
 
     // 1. MOTOR DE RAZONAMIENTO (Con integración LLM)
     console.log("Procesando caso con motor de inferencia...");
-    const nnaNombre = proceso.nna ? proceso.nna.nombre_completo : "Menor involucrado";
-    const resultadoMotor =
-      await this.motorInferenciaService.procesarCaso(simulateDto, nnaNombre);
+    const nnaNombre = proceso.nna
+      ? proceso.nna.nombre_completo
+      : "Menor involucrado";
+    const resultadoMotor = await this.motorInferenciaService.procesarCaso(
+      simulateDto,
+      nnaNombre
+    );
 
     // 2. GUARDAR SENTENCIA EN BASE DE DATOS
     let sentencia = await this.sentenciaRepository.findOne({
@@ -108,10 +112,12 @@ export class ProcesoJudicialService {
     });
 
     if (!sentencia) {
+      console.log(`Creating Setence..... ${proceso.id}`);
       sentencia = this.sentenciaRepository.create({
-        proceso: proceso,
+        procesoId: proceso.id,
         fallo: resultadoMotor.sentenciaFormal,
       });
+      console.log("Sentencia object created (pre-save):", sentencia);
     } else {
       sentencia.fallo = resultadoMotor.sentenciaFormal;
     }

@@ -9,7 +9,10 @@ export class Sentencia {
   @Column('text')
   fallo: string;
 
+  @Column({ type: 'uuid' })
+  procesoId: string;
+
   @OneToOne(() => ProcesoJudicial, (proceso) => proceso.sentencia)
-  @JoinColumn()
+  @JoinColumn({ name: 'procesoId' })
   proceso: ProcesoJudicial;
 }

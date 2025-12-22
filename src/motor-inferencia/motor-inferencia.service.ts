@@ -238,7 +238,7 @@ export class MotorInferenciaService implements OnModuleInit {
 
     while (attempt < maxRetries) {
       try {
-        const apiKey = process.env.GEMINI_API_KEY || "MY_API_KEY";
+        const apiKey = "AIzaSyAyzZIMgVmkn0YFiLK7HRo2T0KY-TzjoCE";
         if (!apiKey) {
           throw new Error("GEMINI_API_KEY not found in environment variables");
         }
