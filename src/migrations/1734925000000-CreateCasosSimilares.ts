@@ -3,7 +3,7 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 export class CreateCasosSimilares1734925000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE "casos_similares" (
+      CREATE TABLE IF NOT EXISTS "casos_similares" (
         "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
         "casoActualId" uuid NOT NULL,
         "casoSimilarId" uuid NOT NULL,
@@ -22,11 +22,11 @@ export class CreateCasosSimilares1734925000000 implements MigrationInterface {
 
     // Crear índices para mejorar performance de búsqueda
     await queryRunner.query(`
-      CREATE INDEX "IDX_casos_similares_caso_actual" ON "casos_similares" ("casoActualId")
+      CREATE INDEX IF NOT EXISTS "IDX_casos_similares_caso_actual" ON "casos_similares" ("casoActualId")
     `);
 
     await queryRunner.query(`
-      CREATE INDEX "IDX_casos_similares_score" ON "casos_similares" ("scoreSimulitud" DESC)
+      CREATE INDEX IF NOT EXISTS "IDX_casos_similares_score" ON "casos_similares" ("scoreSimulitud" DESC)
     `);
   }
 
