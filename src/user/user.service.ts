@@ -6,13 +6,36 @@ import { CustomError } from '../common/exceptions/custom-exceptions.filter';
 import { PersonService } from 'src/person/person.service';
 import { CreatePersonDto } from 'src/person/dto/create-person.dto';
 
+import { UserConfig } from './user-config.entity';
+
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private repo: Repository<User>,
+    @InjectRepository(UserConfig)
+    private configRepo: Repository<UserConfig>,
     private PersonService: PersonService,
   ) {}
+
+  async updateConfig(userId: number, configData: Partial<UserConfig>) {
+    const user = await this.repo.findOne({ where: { id: userId }, relations: ['config'] });
+    if (!user) throw new CustomError('User not found', 'USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+
+    let config = user.config;
+    if (!config) {
+      config = this.configRepo.create(configData);
+      config.user = user;
+    } else {
+      this.configRepo.merge(config, configData);
+    }
+    return this.configRepo.save(config);
+  }
+
+  async getConfig(userId: number) {
+    const user = await this.repo.findOne({ where: { id: userId }, relations: ['config'] });
+    return user?.config || null;
+  }
 
   async singin(data: Partial<User>) {
     try {

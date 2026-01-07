@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
 import { Person } from 'src/person/person.entity';
+import { UserConfig } from './user-config.entity';
 
 @Entity()
 export class User {
@@ -17,4 +18,7 @@ export class User {
 
   @OneToOne(() => Person, (person) => person.user)
   person: Person;
+
+  @OneToOne(() => UserConfig, (config) => config.user, { cascade: true })
+  config: UserConfig;
 }

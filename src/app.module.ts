@@ -17,29 +17,41 @@ import { MotorInferenciaModule } from "./motor-inferencia/motor-inferencia.modul
 //   imports: [ConfigModule],
 //   useFactory: (config: ConfigService) => ({
 //     type: "postgres",
-//     url: config.get<string>("DATABASE_URL"),
+//     url: config.getOrThrow<string>("DATABASE_URL"),
 //     autoLoadEntities: true,
 //     synchronize: true,
 //   }),
 //   inject: [ConfigService],
 // }),
 
+
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: "postgres",
-      host: "localhost",
-      port: 5432,
-      username: "postgres",
-      password: "1234",
-      database: "my_db_uni_test",
-      autoLoadEntities: true,
-      synchronize: true, // only for dev
-      migrations: ["/src/migrations/*.ts"],
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        type: "postgres",
+        url: config.get('DATABASE_URL'),
+        autoLoadEntities: true,
+        synchronize: true,
+      }),
+      inject: [ConfigService],
     }),
+    // TypeOrmModule.forRoot({
+    //   type: "postgres",
+    //   host: "localhost",
+    //   port: 5432,
+    //   username: "postgres",
+    //   password: "1234",
+    //   database: "my_db_uni",
+    //   autoLoadEntities: true,
+    //   synchronize: true, // only for dev
+    //   migrations: ["/src/migrations/*.ts"],
+    // }),
     UserModule,
     AuthModule,
     PersonModule,

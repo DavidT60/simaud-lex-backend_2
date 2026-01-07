@@ -10,6 +10,7 @@ import { Sentencia } from "./sentencia.entity";
 import { ParteProceso } from "./parte-proceso.entity";
 import { Reglas } from "./reglas.entity";
 import { HechosSimulacion } from "./hechos-simulacion.entity";
+import { CasosSimilares } from "./casos-similares.entity"; // New import
 import { Nna } from "../nna/nna.entity";
 import { Person } from "../person/person.entity";
 import { MotorInferenciaModule } from "../motor-inferencia/motor-inferencia.module";
@@ -29,6 +30,7 @@ import { DtoFieldsService } from "./dto-fields.service";
       ParteProceso,
       Reglas,
       HechosSimulacion,
+      CasosSimilares, // New entity
       Nna,
       Person,
       DTOFields,

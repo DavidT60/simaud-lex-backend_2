@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { ProcesoJudicial } from '../proceso-judicial/proceso-judicial.entity';
+import { User } from '../user/user.entity';
 
 @Entity()
 export class Nna {
@@ -20,4 +21,8 @@ export class Nna {
 
   @OneToMany(() => ProcesoJudicial, (proceso) => proceso.nna)
   procesos: ProcesoJudicial[];
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'create_uid' })
+  create_uid: User;
 }

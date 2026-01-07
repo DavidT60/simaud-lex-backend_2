@@ -17,4 +17,7 @@ export class Reglas {
 
   @Column({ type: "enum", enum: TipoDemanda })
   domain: TipoDemanda;
+
+  @Column({ type: "int", default: 1 })
+  peso: number;
 }

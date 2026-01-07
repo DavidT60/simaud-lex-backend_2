@@ -139,103 +139,326 @@ export class SimulateSentenciaDto {
   // =========================================================
   // III. ATRIBUTOS DE PROGENITORES (GENERAL)
   // =========================================================
+  // CAMPOS ANTIGUOS (Opcionales para retrocompatibilidad)
   @ApiProperty({ 
     example: 'BUENA', 
-    description: 'Evaluación de la idoneidad moral general de los progenitores',
-    enum: ['BUENA', 'MEDIA', 'MALA']
+    description: '(DEPRECATED) Evaluación de la idoneidad moral general de los progenitores. Usar idoneidad_moral_madre/padre',
+    enum: ['BUENA', 'MEDIA', 'MALA'],
+    required: false
   })
+  @IsOptional()
   @IsIn(['BUENA', 'MEDIA', 'MALA'])
-  idoneidad_moral: IdoneidadMoral; 
+  idoneidad_moral?: IdoneidadMoral; 
 
   @ApiProperty({ 
     example: 'ESTABLE', 
-    description: 'Estado emocional general de los padres',
+    description: '(DEPRECATED) Estado emocional general de los padres. Usar estado_emocional_madre/padre',
+    enum: ['ESTABLE', 'INESTABLE', 'BAJO_TRATAMIENTO'],
+    required: false
+  })
+  @IsOptional()
+  @IsIn(['ESTABLE', 'INESTABLE', 'BAJO_TRATAMIENTO'])
+  estado_emocional_de_los_padres?: EstadoEmocionalPadres; 
+  
+  // CAMPOS NUEVOS SEPARADOS POR PROGENITOR
+  // Madre
+  @ApiProperty({ 
+    example: 'María González', 
+    description: 'Nombre completo de la madre',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  nombre_madre?: string;
+
+  @ApiProperty({ 
+    example: 'BUENA', 
+    description: 'Evaluación de la idoneidad moral de la madre',
+    enum: ['BUENA', 'MEDIA', 'MALA']
+  })
+  @IsIn(['BUENA', 'MEDIA', 'MALA'])
+  idoneidad_moral_madre: IdoneidadMoral;
+
+  @ApiProperty({ 
+    example: 'ESTABLE', 
+    description: 'Estado emocional de la madre',
     enum: ['ESTABLE', 'INESTABLE', 'BAJO_TRATAMIENTO']
   })
   @IsIn(['ESTABLE', 'INESTABLE', 'BAJO_TRATAMIENTO'])
-  estado_emocional_de_los_padres: EstadoEmocionalPadres; 
-  
-  // Condición de Regla 1 (Madre):
+  estado_emocional_madre: EstadoEmocionalPadres;
+
   @ApiProperty({ example: true, description: 'Si la madre demuestra estabilidad emocional para el cuidado.' })
   @IsBoolean()
-  madre_demuestra_estabilidad_emocional: boolean; 
-  
-  // Condiciones de Riesgo (Reglas 1, 2, 5, 12, 14):
-  @ApiProperty({ example: false, description: 'Existencia de antecedentes de violencia (doméstica, contra el menor, etc.).' })
-  @IsBoolean()
-  existen_antecedentes_de_violencia: boolean; 
+  madre_demuestra_estabilidad_emocional: boolean;
 
-  @ApiProperty({ example: false, description: 'Evidencia de negligencia severa en el pasado o presente.' })
+  @ApiProperty({ example: false, description: 'Antecedentes de violencia de la madre.' })
   @IsBoolean()
-  evidencia_de_negligencia_severa: boolean; 
+  madre_tiene_antecedentes_de_violencia: boolean;
 
-  @ApiProperty({ example: false, description: 'Si uno de los progenitores tiene un historial de conducta agresiva.' })
+  @ApiProperty({ example: false, description: 'Evidencia de negligencia severa de la madre.' })
   @IsBoolean()
-  progenitor_conducta_agresiva_anterior: boolean;
+  madre_evidencia_negligencia_severa: boolean;
 
-  @ApiProperty({ example: false, description: 'Existencia de reportes psicosociales desfavorables o negativos.' })
+  @ApiProperty({ example: false, description: 'Si la madre tiene un historial de conducta agresiva.' })
   @IsBoolean()
-  existen_reportes_psicosociales_negativos: boolean;
+  madre_conducta_agresiva_anterior: boolean;
+
+  @ApiProperty({ example: false, description: 'Reportes psicosociales desfavorables de la madre.' })
+  @IsBoolean()
+  madre_reportes_psicosociales_negativos: boolean;
+
+  // Padre
+  @ApiProperty({ 
+    example: 'Juan Pérez', 
+    description: 'Nombre completo del padre',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  nombre_padre?: string;
+
+  @ApiProperty({ 
+    example: 'BUENA', 
+    description: 'Evaluación de la idoneidad moral del padre',
+    enum: ['BUENA', 'MEDIA', 'MALA']
+  })
+  @IsIn(['BUENA', 'MEDIA', 'MALA'])
+  idoneidad_moral_padre: IdoneidadMoral;
+
+  @ApiProperty({ 
+    example: 'ESTABLE', 
+    description: 'Estado emocional del padre',
+    enum: ['ESTABLE', 'INESTABLE', 'BAJO_TRATAMIENTO']
+  })
+  @IsIn(['ESTABLE', 'INESTABLE', 'BAJO_TRATAMIENTO'])
+  estado_emocional_padre: EstadoEmocionalPadres;
+
+  @ApiProperty({ example: true, description: 'Si el padre demuestra estabilidad emocional para el cuidado.' })
+  @IsBoolean()
+  padre_demuestra_estabilidad_emocional: boolean;
+
+  @ApiProperty({ example: false, description: 'Antecedentes de violencia del padre.' })
+  @IsBoolean()
+  padre_tiene_antecedentes_de_violencia: boolean;
+
+  @ApiProperty({ example: false, description: 'Evidencia de negligencia severa del padre.' })
+  @IsBoolean()
+  padre_evidencia_negligencia_severa: boolean;
+
+  @ApiProperty({ example: false, description: 'Si el padre tiene un historial de conducta agresiva.' })
+  @IsBoolean()
+  padre_conducta_agresiva_anterior: boolean;
+
+  @ApiProperty({ example: false, description: 'Reportes psicosociales desfavorables del padre.' })
+  @IsBoolean()
+  padre_reportes_psicosociales_negativos: boolean;
+
+  // CAMPOS ANTIGUOS (Opcionales para retrocompatibilidad)
+  @ApiProperty({ example: false, description: '(DEPRECATED) Usar madre_tiene_antecedentes_de_violencia/padre_tiene_antecedentes_de_violencia', required: false })
+  @IsOptional()
+  @IsBoolean()
+  existen_antecedentes_de_violencia?: boolean; 
+
+  @ApiProperty({ example: false, description: '(DEPRECATED) Usar madre_evidencia_negligencia_severa/padre_evidencia_negligencia_severa', required: false })
+  @IsOptional()
+  @IsBoolean()
+  evidencia_de_negligencia_severa?: boolean; 
+
+  @ApiProperty({ example: false, description: '(DEPRECATED) Usar madre_conducta_agresiva_anterior/padre_conducta_agresiva_anterior', required: false })
+  @IsOptional()
+  @IsBoolean()
+  progenitor_conducta_agresiva_anterior?: boolean;
+
+  @ApiProperty({ example: false, description: '(DEPRECATED) Usar madre_reportes_psicosociales_negativos/padre_reportes_psicosociales_negativos', required: false })
+  @IsOptional()
+  @IsBoolean()
+  existen_reportes_psicosociales_negativos?: boolean;
   
   // =========================================================
   // IV. ATRIBUTOS DE TIEMPO Y SALUD
   // =========================================================
+  // CAMPOS ANTIGUOS (Opcionales para retrocompatibilidad)
   @ApiProperty({ 
     example: 'ALTA', 
-    description: 'Disponibilidad de tiempo del progenitor para el cuidado del menor',
-    enum: ['ALTA', 'MEDIA', 'BAJA']
+    description: '(DEPRECATED) Usar disponibilidad_de_tiempo_madre/padre',
+    enum: ['ALTA', 'MEDIA', 'BAJA'],
+    required: false
   })
+  @IsOptional()
   @IsIn(['ALTA', 'MEDIA', 'BAJA'])
-  disponibilidad_de_tiempo: DisponibilidadTiempo; 
+  disponibilidad_de_tiempo?: DisponibilidadTiempo; 
 
   @ApiProperty({ 
     example: 'SANO', 
-    description: 'Estado de salud física o condiciones médicas relevantes del progenitor.',
+    description: '(DEPRECATED) Usar estado_de_salud_madre/padre',
+    enum: ['SANO', 'CON_CONDICION'],
+    required: false
+  })
+  @IsOptional()
+  @IsIn(['SANO', 'CON_CONDICION'])
+  estado_de_salud_fisica_o_condiciones_medicas_del_progenitor?: EstadoSalud; 
+
+  @ApiProperty({ example: true, description: '(DEPRECATED) Usar madre_maneja_necesidades_especiales/padre_maneja_necesidades_especiales', required: false })
+  @IsOptional()
+  @IsBoolean()
+  manejo_de_necesidades_especiales?: boolean; 
+
+  // CAMPOS NUEVOS SEPARADOS POR PROGENITOR
+  // Madre
+  @ApiProperty({ 
+    example: 'ALTA', 
+    description: 'Disponibilidad de tiempo de la madre para el cuidado del menor',
+    enum: ['ALTA', 'MEDIA', 'BAJA']
+  })
+  @IsIn(['ALTA', 'MEDIA', 'BAJA'])
+  disponibilidad_de_tiempo_madre: DisponibilidadTiempo;
+
+  @ApiProperty({ 
+    example: 'SANO', 
+    description: 'Estado de salud física de la madre',
     enum: ['SANO', 'CON_CONDICION']
   })
   @IsIn(['SANO', 'CON_CONDICION'])
-  estado_de_salud_fisica_o_condiciones_medicas_del_progenitor: EstadoSalud; 
+  estado_de_salud_madre: EstadoSalud;
 
-  @ApiProperty({ example: true, description: 'Si el progenitor a cargo demuestra buen manejo de las necesidades especiales del menor (si las hay).' })
+  @ApiProperty({ example: true, description: 'Si la madre demuestra buen manejo de las necesidades especiales del menor.' })
   @IsBoolean()
-  manejo_de_necesidades_especiales: boolean; 
+  madre_maneja_necesidades_especiales: boolean;
+
+  // Padre
+  @ApiProperty({ 
+    example: 'ALTA', 
+    description: 'Disponibilidad de tiempo del padre para el cuidado del menor',
+    enum: ['ALTA', 'MEDIA', 'BAJA']
+  })
+  @IsIn(['ALTA', 'MEDIA', 'BAJA'])
+  disponibilidad_de_tiempo_padre: DisponibilidadTiempo;
+
+  @ApiProperty({ 
+    example: 'SANO', 
+    description: 'Estado de salud física del padre',
+    enum: ['SANO', 'CON_CONDICION']
+  })
+  @IsIn(['SANO', 'CON_CONDICION'])
+  estado_de_salud_padre: EstadoSalud;
+
+  @ApiProperty({ example: true, description: 'Si el padre demuestra buen manejo de las necesidades especiales del menor.' })
+  @IsBoolean()
+  padre_maneja_necesidades_especiales: boolean;
   
   // =========================================================
   // V. ATRIBUTOS FINANCIEROS Y CUMPLIMIENTO (PENSIONES)
   // =========================================================
+  // CAMPOS ANTIGUOS (Opcionales para retrocompatibilidad)
   @ApiProperty({ 
     example: 50000, 
-    description: 'Nivel de ingresos mensuales netos del progenitor obligado.',
+    description: '(DEPRECATED) Usar nivel_de_ingresos_madre/padre',
+    minimum: 0,
+    required: false
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  nivel_de_ingresos?: number; 
+
+  @ApiProperty({ 
+    example: 'ESTABLE', 
+    description: '(DEPRECATED) Usar estabilidad_laboral_madre/padre',
+    enum: ['ESTABLE', 'INDEPENDIENTE', 'DESEMPLEADO'],
+    required: false
+  })
+  @IsOptional()
+  @IsIn(['ESTABLE', 'INDEPENDIENTE', 'DESEMPLEADO'])
+  estabilidad_laboral_del_progenitor?: EstabilidadLaboral;
+
+  @ApiProperty({ example: true, description: '(DEPRECATED) Usar madre_tiene_ingresos_comprobados/padre_tiene_ingresos_comprobados', required: false })
+  @IsOptional()
+  @IsBoolean()
+  padre_madre_tiene_ingresos_comprobados?: boolean; 
+
+  @ApiProperty({ example: false, description: '(DEPRECATED) Usar madre_sin_ingresos_formales/padre_sin_ingresos_formales', required: false })
+  @IsOptional()
+  @IsBoolean()
+  progenitor_obligado_no_tiene_ingresos_formales?: boolean; 
+
+  @ApiProperty({ example: true, description: '(DEPRECATED) Usar madre_cargas_familiares_adicionales/padre_cargas_familiares_adicionales', required: false })
+  @IsOptional()
+  @IsBoolean()
+  obligado_demuestra_cargas_familiares_adicionales?: boolean;
+
+  @ApiProperty({ example: false, description: '(DEPRECATED) Usar madre_incumple_pension/padre_incumple_pension', required: false })
+  @IsOptional()
+  @IsBoolean()
+  obligado_incumple_reiteradamente_pension?: boolean;
+
+  // CAMPOS NUEVOS SEPARADOS POR PROGENITOR
+  // Madre
+  @ApiProperty({ 
+    example: 50000, 
+    description: 'Nivel de ingresos mensuales netos de la madre',
     minimum: 0
   })
   @IsNumber()
   @Min(0)
-  nivel_de_ingresos: number; 
+  nivel_de_ingresos_madre: number;
 
   @ApiProperty({ 
     example: 'ESTABLE', 
-    description: 'Estabilidad de la situación laboral del progenitor obligado',
+    description: 'Estabilidad de la situación laboral de la madre',
     enum: ['ESTABLE', 'INDEPENDIENTE', 'DESEMPLEADO']
   })
   @IsIn(['ESTABLE', 'INDEPENDIENTE', 'DESEMPLEADO'])
-  estabilidad_laboral_del_progenitor: EstabilidadLaboral;
+  estabilidad_laboral_madre: EstabilidadLaboral;
 
-  // Condiciones de Regla 6, 7, 9, 10:
-  @ApiProperty({ example: true, description: 'Si el obligado (padre/madre) tiene ingresos comprobados formalmente.' })
+  @ApiProperty({ example: true, description: 'Si la madre tiene ingresos comprobados formalmente.' })
   @IsBoolean()
-  padre_madre_tiene_ingresos_comprobados: boolean; 
+  madre_tiene_ingresos_comprobados: boolean;
 
-  @ApiProperty({ example: false, description: 'Si el obligado alega o se confirma que no tiene ingresos formales.' })
+  @ApiProperty({ example: false, description: 'Si la madre no tiene ingresos formales.' })
   @IsBoolean()
-  progenitor_obligado_no_tiene_ingresos_formales: boolean; 
+  madre_sin_ingresos_formales: boolean;
 
-  @ApiProperty({ example: true, description: 'Si el obligado demuestra que tiene cargas familiares (otros dependientes) adicionales.' })
+  @ApiProperty({ example: true, description: 'Si la madre demuestra cargas familiares (otros dependientes) adicionales.' })
   @IsBoolean()
-  obligado_demuestra_cargas_familiares_adicionales: boolean;
+  madre_cargas_familiares_adicionales: boolean;
 
-  @ApiProperty({ example: false, description: 'Si existe un historial de incumplimiento reiterado de la pensión alimenticia previa o provisional.' })
+  @ApiProperty({ example: false, description: 'Si la madre tiene historial de incumplimiento de pensión alimenticia.' })
   @IsBoolean()
-  obligado_incumple_reiteradamente_pension: boolean;
+  madre_incumple_pension: boolean;
+
+  // Padre
+  @ApiProperty({ 
+    example: 50000, 
+    description: 'Nivel de ingresos mensuales netos del padre',
+    minimum: 0
+  })
+  @IsNumber()
+  @Min(0)
+  nivel_de_ingresos_padre: number;
+
+  @ApiProperty({ 
+    example: 'ESTABLE', 
+    description: 'Estabilidad de la situación laboral del padre',
+    enum: ['ESTABLE', 'INDEPENDIENTE', 'DESEMPLEADO']
+  })
+  @IsIn(['ESTABLE', 'INDEPENDIENTE', 'DESEMPLEADO'])
+  estabilidad_laboral_padre: EstabilidadLaboral;
+
+  @ApiProperty({ example: true, description: 'Si el padre tiene ingresos comprobados formalmente.' })
+  @IsBoolean()
+  padre_tiene_ingresos_comprobados: boolean;
+
+  @ApiProperty({ example: false, description: 'Si el padre no tiene ingresos formales.' })
+  @IsBoolean()
+  padre_sin_ingresos_formales: boolean;
+
+  @ApiProperty({ example: true, description: 'Si el padre demuestra cargas familiares (otros dependientes) adicionales.' })
+  @IsBoolean()
+  padre_cargas_familiares_adicionales: boolean;
+
+  @ApiProperty({ example: false, description: 'Si el padre tiene historial de incumplimiento de pensión alimenticia.' })
+  @IsBoolean()
+  padre_incumple_pension: boolean;
 
   @ApiProperty({ 
     example: 'BUENO', 

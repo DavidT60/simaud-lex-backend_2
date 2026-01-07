@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards } from '@nestjs/common';
 import { ProcesoJudicialService } from './proceso-judicial.service';
 import { CreateProcesoJudicialDto } from './dto/create-proceso-judicial.dto';
 import { UpdateProcesoJudicialDto } from './dto/update-proceso-judicial.dto';
 import { SimulateSentenciaDto } from './dto/simulate-sentencia.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ShareCaseDto } from './dto/share-case.dto';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Procesos Judiciales')
 @Controller('proceso-judicial')
@@ -15,6 +17,12 @@ export class ProcesoJudicialController {
   @ApiResponse({ status: 201, description: 'El proceso ha sido creado.' })
   create(@Body() createDto: CreateProcesoJudicialDto) {
     return this.procesoService.create(createDto);
+  }
+
+  @Get('reglas')
+  @ApiOperation({ summary: 'Obtener todas las reglas del motor de inferencia' })
+  getReglas() {
+    return this.procesoService.getAllRules();
   }
 
   @Get()
@@ -42,14 +50,19 @@ export class ProcesoJudicialController {
   }
 
   @Post(':id/simular-sentencia')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Generar simulación de sentencia basada en datos del proceso' })
   @ApiResponse({ status: 200, description: 'Simulación generada exitosamente' })
   simularSentencia(
     @Param('id') id: string,
-    @Body() simulateDto: SimulateSentenciaDto
+    @Body() simulateDto: SimulateSentenciaDto,
+    @Request() req?: any
   ) {
     console.log("Sending simulateDto", simulateDto);
-    return this.procesoService.generarSimulacionSentencia(id, simulateDto);
+    // Pass user from request if available (authenticated request)
+    const user = req?.user;
+    return this.procesoService.generarSimulacionSentencia(id, simulateDto, user);
   }
 
   @Get(':id/historial-simulaciones')
@@ -65,5 +78,32 @@ export class ProcesoJudicialController {
   @ApiResponse({ status: 404, description: 'Simulación no encontrada' })
   getSimulacion(@Param('simulacionId') simulacionId: string) {
     return this.procesoService.getSimulacionById(simulacionId);
+  }
+
+  @Get('simulacion/:simulacionId/casos-similares')
+  @ApiOperation({ summary: 'Obtener casos similares de una simulación específica' })
+  @ApiResponse({ status: 200, description: 'Casos similares encontrados' })
+  getSimulacionSimilares(@Param('simulacionId') simulacionId: string) {
+    return this.procesoService.getCasosSimilaresBySimulacion(simulacionId);
+  }
+
+  @Post(':id/share')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Compartir caso via email' })
+  @ApiResponse({ status: 200, description: 'Caso compartido exitosamente' })
+  @ApiResponse({ status: 404, description: 'Caso o sentencia no encontrada' })
+  shareCase(
+    @Param('id') id: string,
+    @Body() shareDto: ShareCaseDto,
+    @Request() req?: any
+  ) {
+    const user = req?.user;
+    return this.procesoService.shareCase(
+      id, 
+      shareDto.recipientEmail, 
+      shareDto.message,
+      user
+    );
   }
 }

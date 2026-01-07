@@ -1,5 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn,  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { ProcesoJudicial } from './proceso-judicial.entity';
+import { CasosSimilares } from './casos-similares.entity';
+import { User } from '../user/user.entity';
 
 @Entity()
 export class HechosSimulacion {
@@ -11,6 +15,16 @@ export class HechosSimulacion {
 
   @CreateDateColumn()
   fecha_simulacion: Date;
+
+  // RESULTADOS DEL MOTOR DE INFERENCIA
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  puntuacion_madre?: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  puntuacion_padre?: number;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  recomendacion_custodia?: string;
 
   // ATRIBUTOS ORIGINALES
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
@@ -55,55 +69,166 @@ export class HechosSimulacion {
   ambos_padres_tienen_condiciones_adecuadas: boolean;
 
   // III. ATRIBUTOS DE PROGENITORES (GENERAL)
-  @Column({ type: 'varchar', length: 50 })
-  idoneidad_moral: string;
+  // CAMPOS ANTIGUOS (Nullable para retrocompatibilidad)
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  idoneidad_moral?: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  estado_emocional_de_los_padres?: string;
+
+  @Column({ type: 'boolean', nullable: true })
+  existen_antecedentes_de_violencia?: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  evidencia_de_negligencia_severa?: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  progenitor_conducta_agresiva_anterior?: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  existen_reportes_psicosociales_negativos?: boolean;
+
+  // CAMPOS NUEVOS SEPARADOS POR PROGENITOR
+  // Madre
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  nombre_madre: string;
 
   @Column({ type: 'varchar', length: 50 })
-  estado_emocional_de_los_padres: string;
+  idoneidad_moral_madre: string;
+
+  @Column({ type: 'varchar', length: 50 })
+  estado_emocional_madre: string;
 
   @Column({ type: 'boolean' })
   madre_demuestra_estabilidad_emocional: boolean;
 
   @Column({ type: 'boolean' })
-  existen_antecedentes_de_violencia: boolean;
+  madre_tiene_antecedentes_de_violencia: boolean;
 
   @Column({ type: 'boolean' })
-  evidencia_de_negligencia_severa: boolean;
+  madre_evidencia_negligencia_severa: boolean;
 
   @Column({ type: 'boolean' })
-  progenitor_conducta_agresiva_anterior: boolean;
+  madre_conducta_agresiva_anterior: boolean;
 
   @Column({ type: 'boolean' })
-  existen_reportes_psicosociales_negativos: boolean;
+  madre_reportes_psicosociales_negativos: boolean;
+
+  // Padre
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  nombre_padre: string;
+
+  @Column({ type: 'varchar', length: 50 })
+  idoneidad_moral_padre: string;
+
+  @Column({ type: 'varchar', length: 50 })
+  estado_emocional_padre: string;
+
+  @Column({ type: 'boolean' })
+  padre_demuestra_estabilidad_emocional: boolean;
+
+  @Column({ type: 'boolean' })
+  padre_tiene_antecedentes_de_violencia: boolean;
+
+  @Column({ type: 'boolean' })
+  padre_evidencia_negligencia_severa: boolean;
+
+  @Column({ type: 'boolean' })
+  padre_conducta_agresiva_anterior: boolean;
+
+  @Column({ type: 'boolean' })
+  padre_reportes_psicosociales_negativos: boolean;
 
   // IV. ATRIBUTOS DE TIEMPO Y SALUD
+  // CAMPOS ANTIGUOS (Nullable para retrocompatibilidad)
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  disponibilidad_de_tiempo?: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  estado_de_salud_fisica_o_condiciones_medicas_del_progenitor?: string;
+
+  @Column({ type: 'boolean', nullable: true })
+  manejo_de_necesidades_especiales?: boolean;
+
+  // CAMPOS NUEVOS SEPARADOS POR PROGENITOR
+  // Madre
   @Column({ type: 'varchar', length: 50 })
-  disponibilidad_de_tiempo: string;
+  disponibilidad_de_tiempo_madre: string;
 
   @Column({ type: 'varchar', length: 50 })
-  estado_de_salud_fisica_o_condiciones_medicas_del_progenitor: string;
+  estado_de_salud_madre: string;
 
   @Column({ type: 'boolean' })
-  manejo_de_necesidades_especiales: boolean;
+  madre_maneja_necesidades_especiales: boolean;
+
+  // Padre
+  @Column({ type: 'varchar', length: 50 })
+  disponibilidad_de_tiempo_padre: string;
+
+  @Column({ type: 'varchar', length: 50 })
+  estado_de_salud_padre: string;
+
+  @Column({ type: 'boolean' })
+  padre_maneja_necesidades_especiales: boolean;
 
   // V. ATRIBUTOS FINANCIEROS Y CUMPLIMIENTO (PENSIONES)
+  // CAMPOS ANTIGUOS (Nullable para retrocompatibilidad)
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  nivel_de_ingresos?: number;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  estabilidad_laboral_del_progenitor?: string;
+
+  @Column({ type: 'boolean', nullable: true })
+  padre_madre_tiene_ingresos_comprobados?: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  progenitor_obligado_no_tiene_ingresos_formales?: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  obligado_demuestra_cargas_familiares_adicionales?: boolean;
+
+  @Column({ type: 'boolean', nullable: true })
+  obligado_incumple_reiteradamente_pension?: boolean;
+
+  // CAMPOS NUEVOS SEPARADOS POR PROGENITOR
+  // Madre
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  nivel_de_ingresos: number;
+  nivel_de_ingresos_madre: number;
 
   @Column({ type: 'varchar', length: 50 })
-  estabilidad_laboral_del_progenitor: string;
+  estabilidad_laboral_madre: string;
 
   @Column({ type: 'boolean' })
-  padre_madre_tiene_ingresos_comprobados: boolean;
+  madre_tiene_ingresos_comprobados: boolean;
 
   @Column({ type: 'boolean' })
-  progenitor_obligado_no_tiene_ingresos_formales: boolean;
+  madre_sin_ingresos_formales: boolean;
 
   @Column({ type: 'boolean' })
-  obligado_demuestra_cargas_familiares_adicionales: boolean;
+  madre_cargas_familiares_adicionales: boolean;
 
   @Column({ type: 'boolean' })
-  obligado_incumple_reiteradamente_pension: boolean;
+  madre_incumple_pension: boolean;
+
+  // Padre
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  nivel_de_ingresos_padre: number;
+
+  @Column({ type: 'varchar', length: 50 })
+  estabilidad_laboral_padre: string;
+
+  @Column({ type: 'boolean' })
+  padre_tiene_ingresos_comprobados: boolean;
+
+  @Column({ type: 'boolean' })
+  padre_sin_ingresos_formales: boolean;
+
+  @Column({ type: 'boolean' })
+  padre_cargas_familiares_adicionales: boolean;
+
+  @Column({ type: 'boolean' })
+  padre_incumple_pension: boolean;
 
   @Column({ type: 'varchar', length: 50 })
   cumplimiento_de_las_obligaciones_previas: string;
@@ -132,4 +257,11 @@ export class HechosSimulacion {
 
   @Column({ type: 'boolean' })
   pruebas_son_insuficientes: boolean;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'create_uid' })
+  create_uid: User;
+
+  @OneToMany(() => CasosSimilares, (similar) => similar.casoActual)
+  casosSimilares: CasosSimilares[];
 }

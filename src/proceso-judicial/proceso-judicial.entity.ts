@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, OneToMany, BeforeInsert } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, OneToMany, BeforeInsert, JoinColumn } from 'typeorm';
 import { Nna } from '../nna/nna.entity';
+import { User } from '../user/user.entity';
 import { EstadoProceso, TipoDemanda } from './enums/proceso.enums';
 import { ParteProceso } from './parte-proceso.entity';
 import { Sentencia } from './sentencia.entity';
@@ -52,5 +53,9 @@ export class ProcesoJudicial {
       this.id_caso_dinamico = `${year}-${sequential}-1`;
     }
   }
+
+  @ManyToOne(() => User, { nullable: true }) // Traceability
+  @JoinColumn({ name: 'create_uid' })
+  create_uid: User;
 }
 

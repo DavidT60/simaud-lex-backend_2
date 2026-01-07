@@ -7,7 +7,7 @@ export const AppDataSource = new DataSource({
   port: 5432,
   username: "postgres", // Según tu captura
   password: "1234", // Según tu captura
-  database: "my_db_uni_test", // Según tu captura
+  database: "my_db_uni", // Según tu captura
   synchronize: false,
   logging: true,
   migrations: ["src/migrations/*.ts"],
