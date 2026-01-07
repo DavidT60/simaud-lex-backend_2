@@ -38,6 +38,8 @@ import { MotorInferenciaModule } from "./motor-inferencia/motor-inferencia.modul
         url: config.get('DATABASE_URL'),
         autoLoadEntities: true,
         synchronize: true,
+        migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+        migrationsRun: true,
       }),
       inject: [ConfigService],
     }),
