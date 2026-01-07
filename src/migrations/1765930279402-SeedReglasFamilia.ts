@@ -28,3 +28,4 @@ export class SeedReglasFamilia1700000000000 implements MigrationInterface {
     await queryRunner.query(`DELETE FROM "reglas"`);
   }
 }
+

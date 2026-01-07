@@ -5,7 +5,7 @@ export class AddPesoToReglas1734923000000 implements MigrationInterface {
     // 1. Agregar columna peso con valor por defecto 1
     await queryRunner.query(`
       ALTER TABLE "reglas" 
-      ADD COLUMN "peso" integer NOT NULL DEFAULT 1
+      ADD COLUMN IF NOT EXISTS "peso" integer NOT NULL DEFAULT 1
     `);
 
     // 2. Actualizar reglas existentes con pesos apropiados según su importancia
