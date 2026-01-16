@@ -429,10 +429,15 @@ export class ProcesoJudicialService {
       maxConnections: 1,
       maxMessages: 100,
 
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 15000,
+      connectionTimeout: 30000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
     });
+
+    mailTransporter
+      .verify()
+      .then(() => console.log("✅ SendGrid SMTP ready"))
+      .catch((err) => console.error("❌ SMTP verify failed", err));
 
     let mailDetails = {
       from: String(process.env.MAILER_EMAIL),
