@@ -415,12 +415,23 @@ export class ProcesoJudicialService {
     console.log(`Sentence: ${sentencia.fallo.substring(0, 100)}...`);
     console.log("==================");
 
-    let mailTransporter = nodemailer.createTransport({
-      service: "gmail",
+    const mailTransporter = nodemailer.createTransport({
+      host: "smtp.sendgrid.net",
+      port: 587,
+      secure: false,
+
       auth: {
-        user: String(process.env.MAILER_EMAIL),
-        pass: String(process.env.MAILER_PASSWORD),
+        user: "apikey", // ← THIS MUST BE LITERALLY "apikey"
+        pass: process.env.SENDGRID_API_KEY,
       },
+
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 100,
+
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
     });
 
     let mailDetails = {
