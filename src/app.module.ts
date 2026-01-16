@@ -11,8 +11,8 @@ import { CommonModule } from "./common/common.module";
 import { ConfigModule } from "@nestjs/config";
 import { ConfigService } from "@nestjs/config";
 import { MotorInferenciaModule } from "./motor-inferencia/motor-inferencia.module";
-import { CourseModule } from './course/course.module';
-import { NotificationModule } from './notification/notification.module';
+import { CourseModule } from "./course/course.module";
+import { NotificationModule } from "./notification/notification.module";
 // SUPABASE SETUP CONNECTION EXAMPLE
 // TypeOrmModule.forRootAsync({
 //   imports: [ConfigModule],
@@ -25,36 +25,34 @@ import { NotificationModule } from './notification/notification.module';
 //   inject: [ConfigService],
 // }),
 
-
-
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    // TypeOrmModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   useFactory: (config: ConfigService) => ({
-    //     type: "postgres",
-    //     url: config.get('DATABASE_URL'),
-    //     autoLoadEntities: true,
-    //     synchronize: true,
-    //     migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
-    //     migrationsRun: true,
-    //   }),
-    //   inject: [ConfigService],
-    // }),
-    TypeOrmModule.forRoot({
-      type: "postgres",
-      host: "localhost",
-      port: 5432,
-      username: "postgres",
-      password: "1234",
-      database: "my_db_uni",
-      autoLoadEntities: true,
-      synchronize: true, // only for dev
-      migrations: ["/src/migrations/*.ts"],
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        type: "postgres",
+        url: config.get("DATABASE_URL"),
+        autoLoadEntities: true,
+        synchronize: true,
+        migrations: [__dirname + "/migrations/**/*{.ts,.js}"],
+        migrationsRun: true,
+      }),
+      inject: [ConfigService],
     }),
+    // TypeOrmModule.forRoot({
+    //   type: "postgres",
+    //   host: "localhost",
+    //   port: 5432,
+    //   username: "postgres",
+    //   password: "1234",
+    //   database: "my_db_uni",
+    //   autoLoadEntities: true,
+    //   synchronize: true, // only for dev
+    //   migrations: ["/src/migrations/*.ts"],
+    // }),
     UserModule,
     AuthModule,
     PersonModule,
