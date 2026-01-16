@@ -2,7 +2,7 @@ import { Injectable, HttpStatus } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, MoreThan } from "typeorm";
-import * as nodemailer from "nodemailer";
+import CourierClient from "@trycourier/courier";
 import { UserService } from "../user/user.service";
 import { hashPassword, comparePassword } from "../common/until/bycryp.pss";
 import { CustomError } from "../common/exceptions/custom-exceptions.filter";
@@ -91,57 +91,39 @@ export class AuthService {
   }
 
   private async sendEmail(email: string, code: string) {
-    const mailTransporter = nodemailer.createTransport({
-      host: "smtp.sendgrid.net",
-      port: 587,
-      secure: false,
-
-      auth: {
-        user: "apikey", // ← THIS MUST BE LITERALLY "apikey"
-        pass: process.env.SENDGRID_API_KEY,
-      },
-
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 100,
-
-      connectionTimeout: 30000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000,
-    });
-
-    mailTransporter
-      .verify()
-      .then(() => console.log("✅ SendGrid SMTP ready"))
-      .catch((err) => console.error("❌ SMTP verify failed", err));
-
-    let mailDetails = {
-      from: String(process.env.MAILER_EMAIL),
-      to: email,
-      subject: `🔐 Verify your SimAud-Lex Account`,
-      html: `
-        <h1>Verification Code</h1>
-        <p>Your verification code is: <strong>${code}</strong></p>
-        <p>This code expires in 15 minutes.</p>
-        <p>That message is a critical security warning:Never share verification code.</p>
-
-      `,
-    };
+    const courier = new CourierClient({ apiKey: process.env.COURIER_AUTH_TOKEN });
 
     try {
-      // await mailTransporter.sendMail(mailDetails);
-      setImmediate(() => {
-        mailTransporter.sendMail(mailDetails).catch((err) => {
-          console.error("❌ Email failed:", err.message);
-        });
+      const { requestId } = await courier.send.message({
+        message: {
+          to: {
+            email: email,
+          },
+          content: {
+            version: "2020-01-01",
+            elements: [
+              {
+                type: "text",
+                content: `
+                  <h1>Verification Code</h1>
+                  <p>Your verification code is: <strong>${code}</strong></p>
+                  <p>This code expires in 15 minutes.</p>
+                  <p>That message is a critical security warning:Never share verification code.</p>
+                `,
+                format: "html"
+              } as any
+            ]
+          },
+          routing: {
+            method: "all",
+            channels: ["email"],
+          },
+        },
       });
+      console.log('Email sent via Courier. RequestId:', requestId);
     } catch (error) {
       console.error("Error sending email:", error);
-      throw new CustomError(
-        "Error sending email",
-        "EMAIL_SEND_ERROR",
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      throw new CustomError("Error sending email", "EMAIL_SEND_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

@@ -14,9 +14,7 @@ import { EstadoProceso, RolParte } from "./enums/proceso.enums";
 import { CustomError } from "../common/exceptions/custom-exceptions.filter";
 import { NotificationService } from "../notification/notification.service";
 import { NotificationType } from "../notification/notification.entity";
-// import nodemailer from "nodemailer";
-import * as nodemailer from "nodemailer";
-// import { createTransport } from "nodemailer";
+import CourierClient from "@trycourier/courier";
 
 @Injectable()
 export class ProcesoJudicialService {
@@ -415,162 +413,157 @@ export class ProcesoJudicialService {
     console.log(`Sentence: ${sentencia.fallo.substring(0, 100)}...`);
     console.log("==================");
 
-    const mailTransporter = nodemailer.createTransport({
-      host: "smtp.sendgrid.net",
-      port: 587,
-      secure: false,
+    // Updated to use Courier SDK
+    const courier = new CourierClient({ apiKey: process.env.COURIER_AUTH_TOKEN });
+    const senderName = senderUser?.name || "Sistema";
+    const senderEmail = senderUser?.email || "sistema@simaud-lex.com";
 
-      auth: {
-        user: "apikey", // ← THIS MUST BE LITERALLY "apikey"
-        pass: process.env.SENDGRID_API_KEY,
-      },
-
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 100,
-
-      connectionTimeout: 30000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000,
-    });
-
-    mailTransporter
-      .verify()
-      .then(() => console.log("✅ SendGrid SMTP ready"))
-      .catch((err) => console.error("❌ SMTP verify failed", err));
-
-    let mailDetails = {
-      from: String(process.env.MAILER_EMAIL),
-      to: recipientEmail,
-      subject: `📋 Caso Compartido - ${proceso.id_caso_dinamico}`,
-      text: message || "Se ha compartido un caso judicial con usted.",
-      html: `
+    const emailHtml = `
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caso Compartido</title>
+    <title>Compartir Caso ${proceso.id_caso_dinamico}</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; padding: 20px 0;">
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
-        <!-- Header -->
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+    <!-- Main Table -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0; padding: 20px; background-color: #f4f6f8;">
         <tr>
-            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-                <img src="https://cdn-icons-png.flaticon.com/512/3308/3308395.png" alt="SimAud-Lex Logo" style="width: 80px; height: 80px; margin-bottom: 20px; filter: brightness(0) invert(1);" />
-                <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
-                    SimAud-Lex
-                </h1>
-                <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 400;">
-                    Sistema de Simulación de Sentencias Judiciales
-                </p>
-            </td>
-        </tr>
-        
-        <!-- Main Content -->
-        <tr>
-            <td style="padding: 40px 30px;">
-                <div style="margin-bottom: 30px;">
-                    <h2 style="margin: 0 0 15px 0; color: #1a202c; font-size: 24px; font-weight: 600;">
-                        📋 Caso Compartido
-                    </h2>
-                    <p style="margin: 0; color: #4a5568; font-size: 15px; line-height: 1.6;">
-                        Se ha compartido contigo un caso judicial. A continuación encontrarás los detalles:
-                    </p>
-                </div>
-
-                ${
-                  message
-                    ? `
-                <div style="background: linear-gradient(135deg, #f6f8fb 0%, #e9ecf3 100%); border-left: 4px solid #667eea; padding: 20px; margin-bottom: 30px; border-radius: 8px;">
-                    <p style="margin: 0; color: #2d3748; font-size: 14px; line-height: 1.6; font-style: italic;">
-                        <strong style="color: #667eea;">💬 Mensaje:</strong><br/>
-                        ${message}
-                    </p>
-                </div>
-                `
-                    : ""
-                }
-
-                <!-- Case Info Card -->
-                <div style="background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 25px; margin-bottom: 25px;">
-                    <div style="margin-bottom: 20px;">
-                        <p style="margin: 0 0 8px 0; color: #718096; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Número de Caso
-                        </p>
-                        <p style="margin: 0; color: #1a202c; font-size: 20px; font-weight: 700; font-family: 'Courier New', monospace;">
-                            ${proceso.id_caso_dinamico}
-                        </p>
-                    </div>
+            <td align="center">
+                <!-- Card Container -->
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); overflow: hidden; max-width: 100%;">
                     
-                    <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
-                        <p style="margin: 0 0 8px 0; color: #718096; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                            ⚖️ Sentencia
-                        </p>
-                        <div style="background: #f7fafc; padding: 15px; border-radius: 8px; border-left: 3px solid #764ba2;">
-                            <p style="margin: 0; color: #2d3748; font-size: 14px; line-height: 1.6;">
-                                ${sentencia.fallo.substring(0, 200)}${sentencia.fallo.length > 200 ? "..." : ""}
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 30px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0 0 10px 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;">SimAud-Lex</h1>
+                            <p style="color: #94a3b8; margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">Sistema de Simulación Judicial</p>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <!-- Greeting -->
+                            <h2 style="color: #1a202c; margin: 0 0 20px 0; font-size: 20px; font-weight: 600;">
+                                Hola,
+                            </h2>
+                            <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;">
+                                <strong>${senderName}</strong> te ha compartido el acceso a un proceso judicial simulado para su revisión y análisis.
                             </p>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Call to Action -->
-                <div style="text-align: center; margin: 35px 0;">
-                    <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/proceso-judicial/${proceso.id_caso_dinamico}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); transition: transform 0.2s;">
-                        🔍 Ver Caso Completo
-                    </a>
-                </div>
+                            ${message ? 
+                            `<div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; margin-bottom: 30px; border-radius: 4px;">
+                                <p style="margin: 0; color: #475569; font-style: italic;">"${message}"</p>
+                            </div>` : ''}
 
-                <!-- Info Box -->
-                <div style="background: #fffbeb; border: 1px solid #fbbf24; border-radius: 8px; padding: 15px; margin-top: 25px;">
-                    <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;">
-                        <strong style="color: #b45309;">ℹ️ Nota:</strong> Este caso ha sido compartido desde el sistema SimAud-Lex. 
-                        Para acceder al caso completo y toda la documentación asociada, inicia sesión en la plataforma.
-                    </p>
-                </div>
-            </td>
-        </tr>
+                            <!-- Case Details Card -->
+                            <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
+                                <div style="margin-bottom: 20px;">
+                                    <p style="margin: 0 0 5px 0; color: #718096; font-size: 12px; font-weight: 600; text-transform: uppercase;">
+                                        📂 Expediente
+                                    </p>
+                                    <p style="margin: 0; color: #1a202c; font-size: 20px; font-weight: 700; font-family: 'Courier New', monospace;">
+                                        ${proceso.id_caso_dinamico}
+                                    </p>
+                                </div>
+                                
+                                <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                                    <p style="margin: 0 0 8px 0; color: #718096; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        ⚖️ Sentencia
+                                    </p>
+                                    <div style="background: #f7fafc; padding: 15px; border-radius: 8px; border-left: 3px solid #764ba2;">
+                                        <p style="margin: 0; color: #2d3748; font-size: 14px; line-height: 1.6;">
+                                            ${sentencia.fallo.substring(0, 200)}${sentencia.fallo.length > 200 ? "..." : ""}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
 
-        <!-- Footer -->
-        <tr>
-            <td style="background: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-                <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 13px;">
-                    Compartido por: <strong>${senderUser?.name || "Sistema"}</strong>
-                </p>
-                <p style="margin: 0 0 20px 0; color: #718096; font-size: 12px;">
-                    ${senderUser?.email || "sistema@simaud-lex.com"}
-                </p>
-                
-                <div style="border-top: 1px solid #cbd5e0; padding-top: 20px; margin-top: 20px;">
-                    <p style="margin: 0 0 5px 0; color: #2d3748; font-size: 13px; font-weight: 600;">
-                        SimAud-Lex © ${new Date().getFullYear()}
-                    </p>
-                    <p style="margin: 0; color: #a0aec0; font-size: 11px;">
-                        Sistema de Simulación de Audiencias y Sentencias Judiciales
-                    </p>
-                </div>
+                            <!-- Call to Action -->
+                            <div style="text-align: center; margin: 35px 0;">
+                                <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/proceso-judicial/${proceso.id_caso_dinamico}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); transition: transform 0.2s;">
+                                    🔍 Ver Caso Completo
+                                </a>
+                            </div>
+
+                            <!-- Info Box -->
+                            <div style="background: #fffbeb; border: 1px solid #fbbf24; border-radius: 8px; padding: 15px; margin-top: 25px;">
+                                <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;">
+                                    <strong style="color: #b45309;">ℹ️ Nota:</strong> Este caso ha sido compartido desde el sistema SimAud-Lex. 
+                                    Para acceder al caso completo y toda la documentación asociada, inicia sesión en la plataforma.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <p style="margin: 0 0 10px 0; color: #4a5568; font-size: 13px;">
+                                Compartido por: <strong>${senderName}</strong>
+                            </p>
+                            <p style="margin: 0 0 20px 0; color: #718096; font-size: 12px;">
+                                ${senderEmail}
+                            </p>
+                            
+                            <div style="border-top: 1px solid #cbd5e0; padding-top: 20px; margin-top: 20px;">
+                                <p style="margin: 0 0 5px 0; color: #2d3748; font-size: 13px; font-weight: 600;">
+                                    SimAud-Lex © ${new Date().getFullYear()}
+                                </p>
+                                <p style="margin: 0; color: #a0aec0; font-size: 11px;">
+                                    Sistema de Simulación de Audiencias y Sentencias Judiciales
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>
 </body>
-</html>`,
-    };
+</html>`;
 
-    mailTransporter.sendMail(mailDetails, (err, data) => {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log("Email sent successfully");
-      }
-    });
+    try {
+        const { requestId } = await courier.send.message({
+            message: {
+                to: {
+                    email: recipientEmail,
+                },
+                content: {
+                    title: `Compartido: Caso ${proceso.id_caso_dinamico} - SimAud-Lex`,
+                    version: "2020-01-01",
+                    elements: [
+                        {
+                            type: "text",
+                            content: emailHtml,
+                            format: "html"
+                        } as any
+                    ]
+                },
+                routing: {
+                     method: "all",
+                     channels: ["email"],
+                },
+            },
+        });
+        console.log("Email sent successfully via Courier. RequestId:", requestId);
+        
+        // Return success response
+        return {
+            success: true,
+            message: `Caso compartido exitosamente con ${recipientEmail}`,
+            caseId: proceso.id_caso_dinamico,
+            sharedBy: senderEmail,
+        };
 
-    // Return success response
-    return {
-      success: true,
-      message: `Caso compartido exitosamente con ${recipientEmail}`,
-      caseId: proceso.id_caso_dinamico,
-      sharedBy: senderUser?.email || "Sistema",
-    };
+    } catch (error) {
+        console.error("Error sending email via Courier:", error);
+         // Return basic success structure but log error, or throw? 
+         // Service usually returns object.
+         // Let's throw to match previous behavior if needed, or return success: false
+         throw new CustomError("Failed to send email via Courier", "EMAIL_SEND_ERROR", 500); 
+    }
   }
 }
