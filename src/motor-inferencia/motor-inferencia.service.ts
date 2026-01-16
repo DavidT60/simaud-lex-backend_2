@@ -103,9 +103,17 @@ export class MotorInferenciaService implements OnModuleInit {
     // Calcular recomendación de custodia basada en puntuación
     const diferencia = totalPuntosMadre - totalPuntosPadre;
     const margen = 3; // Diferencia mínima para custodia exclusiva
+    
+    // UMBRAL MINIMO DE IDONEIDAD
+    // Si ambos padres tienen una puntuación muy negativa, ninguno es apto.
+    const UMBRAL_IDONEIDAD = -5;
 
-    let recomendacionCustodia: "MADRE" | "PADRE" | "COMPARTIDA";
-    if (Math.abs(diferencia) < margen) {
+    let recomendacionCustodia: "MADRE" | "PADRE" | "COMPARTIDA" | "TUTELA_LEGAL_TERCERO";
+    
+    if (totalPuntosMadre < UMBRAL_IDONEIDAD && totalPuntosPadre < UMBRAL_IDONEIDAD) {
+      console.log(`⚠️ ALERTA: Ambos padres por debajo del umbral (${UMBRAL_IDONEIDAD}). Se sugiere Tercero.`);
+      recomendacionCustodia = "TUTELA_LEGAL_TERCERO";
+    } else if (Math.abs(diferencia) < margen) {
       recomendacionCustodia = "COMPARTIDA";
     } else if (diferencia > 0) {
       recomendacionCustodia = "MADRE";

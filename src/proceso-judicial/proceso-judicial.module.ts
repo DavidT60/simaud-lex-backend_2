@@ -14,6 +14,8 @@ import { CasosSimilares } from "./casos-similares.entity"; // New import
 import { Nna } from "../nna/nna.entity";
 import { Person } from "../person/person.entity";
 import { MotorInferenciaModule } from "../motor-inferencia/motor-inferencia.module";
+import { AuthModule } from "../auth/auth.module";
+import { NotificationModule } from '../notification/notification.module';
 
 
 import { DTOFields } from "./dto-fields.entity";
@@ -37,6 +39,8 @@ import { DtoFieldsService } from "./dto-fields.service";
       RelacionReglasDTO,
     ]),
     MotorInferenciaModule,
+    AuthModule,
+    NotificationModule,
   ],
   controllers: [ProcesoJudicialController, ReglasConfigController],
   providers: [ProcesoJudicialService, DtoFieldsService],

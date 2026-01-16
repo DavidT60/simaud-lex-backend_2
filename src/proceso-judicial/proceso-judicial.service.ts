@@ -11,6 +11,9 @@ import { CasosSimilares } from "./casos-similares.entity";
 import { MotorInferenciaService } from "../motor-inferencia/motor-inferencia.service";
 import { Nna } from "../nna/nna.entity";
 import { EstadoProceso, RolParte } from "./enums/proceso.enums";
+import { CustomError } from "../common/exceptions/custom-exceptions.filter";
+import { NotificationService } from "../notification/notification.service";
+import { NotificationType } from "../notification/notification.entity";
 // import nodemailer from "nodemailer";
 import * as nodemailer from "nodemailer";
 // import { createTransport } from "nodemailer";
@@ -28,7 +31,8 @@ export class ProcesoJudicialService {
     private readonly sentenciaRepository: Repository<Sentencia>,
     @InjectRepository(CasosSimilares)
     private readonly casosSimilaresRepository: Repository<CasosSimilares>,
-    private readonly motorInferenciaService: MotorInferenciaService
+    private readonly motorInferenciaService: MotorInferenciaService,
+    private readonly notificationService: NotificationService
   ) {}
 
   async create(
@@ -50,10 +54,81 @@ export class ProcesoJudicialService {
     return this.procesoRepository.save(proceso);
   }
 
-  findAll(): Promise<ProcesoJudicial[]> {
+  async findAll(user?: any): Promise<ProcesoJudicial[]> {
+    const where: any = {};
+    if (user && user.role === "Estudiante") {
+      where.create_uid = { id: user.id };
+    }
+
     return this.procesoRepository.find({
-      relations: ["nna", "partes", "partes.persona"],
+      where,
+      relations: ["nna", "partes", "partes.persona", "create_uid"],
     });
+  }
+
+  async gradeCase(
+    id: string,
+    calificacion: number,
+    detalles: string,
+    user: any
+  ) {
+    if (user.role !== "Admin" && user.role !== "Profesor") {
+      throw new CustomError(
+        "Only Admin or Professor can grade cases",
+        "UNAUTHORIZED",
+        403
+      );
+    }
+
+    const proceso = await this.procesoRepository.findOne({
+      where: { id },
+      relations: ["create_uid"],
+    });
+
+    if (!proceso) {
+      throw new CustomError("Case not found", "NOT_FOUND", 404);
+    }
+
+    if (proceso.estado !== EstadoProceso.SENTENCIA) {
+      console.log("VALIDATION ERROR IS EXECUTE SHOW THE ERROR TO THE USER");
+      throw new CustomError(
+        "Solo se pueden calificar casos con sentencia",
+        "BAD_REQUEST",
+        400
+      );
+    }
+
+    if (proceso.is_calificacion) {
+      throw new CustomError(
+        "Este caso ya ha sido calificado y no se puede editar.",
+        "BAD_REQUEST",
+        400
+      );
+    }
+
+    proceso.calificacion = calificacion;
+    proceso.detallesCalificacion = detalles;
+    proceso.calificadoPor = user;
+    proceso.is_calificacion = true;
+    const savedProceso = await this.procesoRepository.save(proceso);
+
+    // Create notification for case owner
+    if (proceso.create_uid) {
+      await this.notificationService.create(
+        proceso.create_uid,
+        `Tu caso ${proceso.id_caso_dinamico} ha sido calificado con ${calificacion}/100`,
+        NotificationType.GRADING,
+        proceso.id
+      );
+
+      await this.shareCase(
+        proceso.id,
+        proceso.create_uid.email,
+        `Tu caso ${proceso.id_caso_dinamico} ha sido calificado.`
+      );
+    }
+
+    return savedProceso;
   }
 
   async findOne(id: string): Promise<ProcesoJudicial> {
@@ -145,7 +220,7 @@ export class ProcesoJudicialService {
         sentencia = this.sentenciaRepository.create({
           proceso: proceso,
           procesoId: proceso.id, // Explicitly set relation
-          fallo: `Custodia recomendada: ${resultadoMotor.recomendacionCustodia}\nPuntuación Madre: ${resultadoMotor.puntuacionMadre}\nPuntuación Padre: ${resultadoMotor.puntuacionPadre}\n\n${resultadoMotor.sentenciaFormal || ''}`,
+          fallo: `Custodia recomendada: ${resultadoMotor.recomendacionCustodia}\nPuntuación Madre: ${resultadoMotor.puntuacionMadre}\nPuntuación Padre: ${resultadoMotor.puntuacionPadre}\n\n${resultadoMotor.sentenciaFormal || ""}`,
           created_by_name: user?.name || "Sistema",
           created_by_email: user?.email || "sistema@simaud-lex.com",
           ...(user ? { create_uid: user } : {}),
@@ -153,7 +228,7 @@ export class ProcesoJudicialService {
         console.log("Sentencia object created (pre-save):", sentencia);
       } else {
         console.log("Ya existe procede a sobreescribir....");
-        sentencia.fallo = `Custodia recomendada: ${resultadoMotor.recomendacionCustodia}\nPuntuación Madre: ${resultadoMotor.puntuacionMadre}\nPuntuación Padre: ${resultadoMotor.puntuacionPadre}\n\n${resultadoMotor.sentenciaFormal || ''}`;
+        sentencia.fallo = `Custodia recomendada: ${resultadoMotor.recomendacionCustodia}\nPuntuación Madre: ${resultadoMotor.puntuacionMadre}\nPuntuación Padre: ${resultadoMotor.puntuacionPadre}\n\n${resultadoMotor.sentenciaFormal || ""}`;
         // Ensure relation is preserved/set
         sentencia.proceso = proceso;
         sentencia.procesoId = proceso.id;
@@ -166,9 +241,12 @@ export class ProcesoJudicialService {
       }
 
       console.log("DEBUG: proceso.id =", proceso.id);
-      console.log("DEBUG: sentencia.procesoId (before save) =", sentencia.procesoId);
+      console.log(
+        "DEBUG: sentencia.procesoId (before save) =",
+        sentencia.procesoId
+      );
       console.log("DEBUG: sentencia.proceso (id) =", sentencia.proceso?.id);
-      
+
       console.log("Guardando sentencia...");
       let savedSentencia = await this.sentenciaRepository.save(sentencia);
       console.log("Sentencia guardada:", savedSentencia);
@@ -177,7 +255,9 @@ export class ProcesoJudicialService {
       console.log("Actualizando estado de proceso...");
       console.log("Actualizando estado de proceso...");
       // Use update to avoid relation cascade issues
-      await this.procesoRepository.update(proceso.id, { estado: EstadoProceso.SENTENCIA });
+      await this.procesoRepository.update(proceso.id, {
+        estado: EstadoProceso.SENTENCIA,
+      });
       proceso.estado = EstadoProceso.SENTENCIA;
       console.log("Estado de proceso actualizado a SENTENCIA");
 
@@ -337,11 +417,14 @@ export class ProcesoJudicialService {
 
     let mailTransporter = nodemailer.createTransport({
       service: "gmail",
-      auth: { user: "davidceballo11@gmail.com", pass: "qzwl grnd fpxl qmbx" },
+      auth: {
+        user: String(process.env.MAILER_EMAIL),
+        pass: String(process.env.MAILER_PASSWORD),
+      },
     });
 
     let mailDetails = {
-      from: "davidceballo11@gmail.com",
+      from: String(process.env.MAILER_EMAIL),
       to: recipientEmail,
       subject: `📋 Caso Compartido - ${proceso.id_caso_dinamico}`,
       text: message || "Se ha compartido un caso judicial con usted.",
@@ -418,7 +501,7 @@ export class ProcesoJudicialService {
 
                 <!-- Call to Action -->
                 <div style="text-align: center; margin: 35px 0;">
-                    <a href="#" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); transition: transform 0.2s;">
+                    <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/proceso-judicial/${proceso.id_caso_dinamico}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; letter-spacing: 0.3px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); transition: transform 0.2s;">
                         🔍 Ver Caso Completo
                     </a>
                 </div>

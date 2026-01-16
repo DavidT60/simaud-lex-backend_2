@@ -6,7 +6,7 @@ import {
   OneToOne,
 } from "typeorm";
 import { ParteProceso } from "../proceso-judicial/parte-proceso.entity";
-import { User } from "src/user/user.entity";
+import { User } from "../user/user.entity";
 
 @Entity()
 export class Person {
