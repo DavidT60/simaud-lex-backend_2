@@ -91,7 +91,9 @@ export class AuthService {
   }
 
   private async sendEmail(email: string, code: string) {
-    const courier = new CourierClient({ apiKey: process.env.COURIER_AUTH_TOKEN });
+    const courier = new CourierClient({
+      apiKey: process.env.COURIER_AUTH_TOKEN,
+    });
 
     try {
       const { requestId } = await courier.send.message({
@@ -105,14 +107,16 @@ export class AuthService {
               {
                 type: "text",
                 content: `
-                  <h1>Verification Code</h1>
-                  <p>Your verification code is: <strong>${code}</strong></p>
-                  <p>This code expires in 15 minutes.</p>
-                  <p>That message is a critical security warning:Never share verification code.</p>
+                    # Verification Code
+
+                    Your verification code is: **${code}**
+
+                    This code expires in 15 minutes.
+
+                    That message is a critical security warning: Never share verification code.
                 `,
-                format: "html"
-              } as any
-            ]
+              } as any,
+            ],
           },
           routing: {
             method: "all",
@@ -120,10 +124,14 @@ export class AuthService {
           },
         },
       });
-      console.log('Email sent via Courier. RequestId:', requestId);
+      console.log("Email sent via Courier. RequestId:", requestId);
     } catch (error) {
       console.error("Error sending email:", error);
-      throw new CustomError("Error sending email", "EMAIL_SEND_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new CustomError(
+        "Error sending email",
+        "EMAIL_SEND_ERROR",
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 

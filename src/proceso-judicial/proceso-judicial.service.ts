@@ -533,14 +533,14 @@ export class ProcesoJudicialService {
                 },
                 content: {
                     title: `Compartido: Caso ${proceso.id_caso_dinamico} - SimAud-Lex`,
-                    version: "2020-01-01",
-                    elements: [
-                        {
-                            type: "text",
-                            content: emailHtml,
-                            format: "html"
-                        } as any
-                    ]
+                    body: `Hola, ${senderName} te ha compartido el acceso al proceso judicial simulado ${proceso.id_caso_dinamico} para su revisión y análisis.`
+                },
+                channels: {
+                    email: {
+                        override: {
+                            html: emailHtml,
+                        }
+                    }
                 },
                 routing: {
                      method: "all",
